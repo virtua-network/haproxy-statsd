@@ -28,6 +28,7 @@ import socket
 import argparse
 import ConfigParser
 import re
+import daemon 
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -95,23 +96,24 @@ if __name__ == '__main__':
 
     interval = config.getfloat('haproxy-statsd', 'interval')
 
-    try:
-        while True:
-            report_data = get_haproxy_report(
-                config.get('haproxy-statsd', 'haproxy_url'),
-                user=config.get('haproxy-statsd', 'haproxy_user'),
-                password=config.get('haproxy-statsd', 'haproxy_password'))
+    with daemon.DaemonContext():
+        try:
+            while True:
+                report_data = get_haproxy_report(
+                    config.get('haproxy-statsd', 'haproxy_url'),
+                    user=config.get('haproxy-statsd', 'haproxy_user'),
+                    password=config.get('haproxy-statsd', 'haproxy_password'))
 
-            report_num = report_to_statsd(
-                report_data,
-                namespace=namespace,
-                host=config.get('haproxy-statsd', 'statsd_host'),
-                port=config.getint('haproxy-statsd', 'statsd_port'))
+                report_num = report_to_statsd(
+                    report_data,
+                    namespace=namespace,
+                    host=config.get('haproxy-statsd', 'statsd_host'),
+                    port=config.getint('haproxy-statsd', 'statsd_port'))
 
-            print("Reported %s stats" % report_num)
-            if args.once:
-                exit(0)
-            else:
-                time.sleep(interval)
-    except KeyboardInterrupt:
-        exit(0)
+                print("Reported %s stats" % report_num)
+                if args.once:
+                    exit(0)
+                else:
+                    time.sleep(interval)
+        except KeyboardInterrupt:
+            exit(0)
