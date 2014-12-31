@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2.7
 """
 usage: report_haproxy.py [-h] [-c CONFIG] [-1]
 
@@ -27,6 +27,7 @@ import csv
 import socket
 import argparse
 import ConfigParser
+import re
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -52,7 +53,8 @@ def report_to_statsd(stat_rows,
     # Report for each row
     for row in stat_rows:
         path = '.'.join([namespace, row['pxname'], row['svname']])
-
+        # since we are using ':' as separator in naming convention, replace it
+        path = re.sub(':', '.', path, 2)
         # Report each stat that we want in each row
         for stat in ['scur', 'smax', 'ereq', 'econ', 'rate', 'bin', 'bout', 'hrsp_1xx', 'hrsp_2xx', 'hrsp_3xx', 'hrsp_4xx', 'hrsp_5xx', 'qtime', 'ctime', 'rtime', 'ttime']:
             val = row.get(stat) or 0
